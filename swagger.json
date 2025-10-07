@@ -17,7 +17,10 @@
   "tags": [
     { "name": "Public", "description": "Rutas públicas" },
     { "name": "Auth", "description": "Autenticación" },
-    { "name": "Todos", "description": "Rutas privadas de todos" }
+    { "name": "Questions", "description": "Gestión de preguntas" },
+    { "name": "Answers", "description": "Gestión de respuestas y transcripción" },
+    { "name": "CV", "description": "Generación y listado de CVs" },
+    { "name": "Media", "description": "Gestión de imágenes de perfil" }
   ],
   "paths": {
     "/ping": {
@@ -116,48 +119,25 @@
         }
       }
     },
-    "/v1/todos": {
-      "get": {
-        "tags": ["Todos"],
-        "summary": "Listar todos",
-        "security": [{ "ApiKeyAuth": [] }],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": { "type": "string", "example": "test" }
-              }
-            }
-          },
-          "401": {
-            "description": "No autorizado",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/MessageResponse" }
-              }
-            }
-          }
-        }
-      },
+    "/v1/question": {
       "post": {
-        "tags": ["Todos"],
-        "summary": "Crear todo",
+        "tags": ["Questions"],
+        "summary": "Crear pregunta",
         "security": [{ "ApiKeyAuth": [] }],
         "requestBody": {
-          "required": false,
+          "required": true,
           "content": {
             "application/json": {
-              "schema": { "type": "object", "additionalProperties": true }
+              "schema": { "$ref": "#/components/schemas/PostQuestionRequest" }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Creado",
+            "description": "Pregunta creada",
             "content": {
-              "text/plain": {
-                "schema": { "type": "string", "example": "test" }
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PostQuestionResponse" }
               }
             }
           },
@@ -172,25 +152,58 @@
         }
       }
     },
-    "/v1/todos/{id}": {
-      "get": {
-        "tags": ["Todos"],
-        "summary": "Obtener todo por id",
+    "/v1/answer": {
+      "post": {
+        "tags": ["Answers"],
+        "summary": "Crear respuesta",
         "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PostAnswerRequest" }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "OK",
+            "description": "Respuesta creada",
             "content": {
-              "text/plain": {
-                "schema": { "type": "string", "example": "test" }
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PostAnswerResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Pregunta no encontrada",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/questions": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "Listar preguntas",
+        "security": [{ "ApiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Listado de preguntas",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetQuestionsResponse" }
               }
             }
           },
@@ -203,33 +216,19 @@
             }
           }
         }
-      },
-      "patch": {
-        "tags": ["Todos"],
-        "summary": "Actualizar todo",
+      }
+    },
+    "/v1/answers": {
+      "get": {
+        "tags": ["Answers"],
+        "summary": "Listar respuestas del usuario",
         "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": { "type": "object", "additionalProperties": true }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "Actualizado",
+            "description": "Listado de respuestas",
             "content": {
-              "text/plain": {
-                "schema": { "type": "string", "example": "test" }
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetAnswersResponse" }
               }
             }
           },
@@ -238,39 +237,163 @@
             "content": {
               "application/json": {
                 "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pdf": {
+      "get": {
+        "tags": ["CV"],
+        "summary": "Generar y devolver PDF del CV",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PdfRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF generado",
+            "content": {
+              "application/pdf": {
+                "schema": { "type": "string", "format": "binary" }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/templates": {
+      "get": {
+        "tags": ["CV"],
+        "summary": "Listar templates disponibles",
+        "security": [{ "ApiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Listado de templates",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetTemplatesResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/transcribe": {
+      "post": {
+        "tags": ["Answers"],
+        "summary": "Transcribir audio a texto",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TranscribeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Texto transcrito",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TranscribeResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Error en transcripción",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/cvs": {
+      "get": {
+        "tags": ["CV"],
+        "summary": "Listar CVs del usuario",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Listado paginado de CVs",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetCvsResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } }
+          }
+        }
+      }
+    },
+    "/v1/image": {
+      "post": {
+        "tags": ["Media"],
+        "summary": "Subir imagen de perfil",
+        "security": [{ "ApiKeyAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ImageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Imagen subida",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Error en subida",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } }
+          }
+        }
+      },
+      "get": {
+        "tags": ["Media"],
+        "summary": "Obtener imagen de perfil",
+        "security": [{ "ApiKeyAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "URL de imagen",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageResponse" }
               }
             }
           }
         }
       },
       "delete": {
-        "tags": ["Todos"],
-        "summary": "Eliminar todo",
+        "tags": ["Media"],
+        "summary": "Eliminar imagen de perfil",
         "security": [{ "ApiKeyAuth": [] }],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string" }
-          }
-        ],
         "responses": {
           "200": {
-            "description": "Eliminado",
-            "content": {
-              "text/plain": {
-                "schema": { "type": "string", "example": "test" }
-              }
-            }
-          },
-          "401": {
-            "description": "No autorizado",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/MessageResponse" }
-              }
-            }
+            "description": "Eliminada",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MessageResponse" } } }
           }
         }
       }
@@ -286,6 +409,136 @@
       }
     },
     "schemas": {
+      "PostQuestionRequest": {
+        "type": "object",
+        "required": ["content"],
+        "properties": { "content": { "type": "string", "minLength": 3, "maxLength": 300 } }
+      },
+      "PostQuestionResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "question": { "$ref": "#/components/schemas/Question" }
+        }
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "content": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "PostAnswerRequest": {
+        "type": "object",
+        "required": ["content", "questionId"],
+        "properties": {
+          "content": { "type": "string", "minLength": 3, "maxLength": 300 },
+          "questionId": { "type": "string", "pattern": "^[0-9a-fA-F]{24}$" }
+        }
+      },
+      "PostAnswerResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "answer": { "$ref": "#/components/schemas/AnswerItem" }
+        }
+      },
+      "AnswerItem": {
+        "type": "object",
+        "properties": {
+          "questionContent": { "type": "string" },
+          "answer": { "type": "string" }
+        }
+      },
+      "GetQuestionsResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "questions": { "type": "array", "items": { "$ref": "#/components/schemas/Question" } }
+        }
+      },
+      "GetAnswersResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "answers": { "type": "array", "items": { "$ref": "#/components/schemas/AnswerItem" } }
+        }
+      },
+      "PdfRequest": {
+        "type": "object",
+        "properties": {
+          "templateName": { "type": "string", "enum": ["harvard", "modern"] }
+        }
+      },
+      "GetTemplatesResponse": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "description": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "TranscribeRequest": {
+        "type": "object",
+        "required": ["audioBase64", "mimeType"],
+        "properties": {
+          "audioBase64": { "type": "string" },
+          "mimeType": { "type": "string", "enum": [
+            "audio/mpeg","audio/mp3","audio/wav","audio/webm","audio/ogg","audio/m4a","audio/x-m4a","audio/mp4"
+          ] },
+          "language": { "type": "string", "default": "es" }
+        }
+      },
+      "TranscribeResponse": {
+        "type": "object",
+        "properties": { "text": { "type": "string" } }
+      },
+      "GetCvsResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CvItem" }
+          },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      },
+      "CvItem": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "userId": { "type": "string" },
+          "templateName": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ImageRequest": {
+        "type": "object",
+        "required": ["image"],
+        "properties": { "image": { "type": "string" } }
+      },
+      "ImageResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "image": { "type": ["string", "null" ] }
+        }
+      },
       "LoginRequest": {
         "type": "object",
         "required": ["username", "password"],
