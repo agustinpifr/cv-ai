@@ -61,12 +61,13 @@ const getPDF = async (req, res) => {
         console.log('Valid photo URL being sent to OpenAI:', validPhotoUrl);
         
         // Pass photo URL to OpenAI for intelligent placement
-        const html = await generateHTML(userId, { templateName, photoUrl: validPhotoUrl });
+        //const html = await generateHTML(userId, { templateName, photoUrl: validPhotoUrl });
         
-        const pdfBuffer = await htmlToPdfBuffer(html);
+        //const pdfBuffer = await htmlToPdfBuffer(html);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
-        res.send(pdfBuffer);
+        //res.send(pdfBuffer);
+        res.send(html);
         saveCV(userId, pdfBuffer, templateName).catch(() => {});
     } catch (error) {
         if (!res.headersSent) {
