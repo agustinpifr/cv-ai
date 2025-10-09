@@ -3,8 +3,8 @@ let puppeteer;
 
 // Detect if running in Vercel/serverless environment
 if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  // Use chrome-aws-lambda for serverless environments
-  chromium = require('chrome-aws-lambda');
+  // Use Sparticuz Chromium for serverless environments
+  chromium = require('@sparticuz/chromium');
   puppeteer = require('puppeteer-core');
 } else {
   // Use regular puppeteer for local development
@@ -20,8 +20,8 @@ const htmlToPdfBuffer = async (html) => {
       ? {
           args: chromium.args,
           defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath,
-          headless: chromium.headless,
+          executablePath: await chromium.executablePath(),
+          headless: true,
           ignoreHTTPSErrors: true,
         }
       : {
