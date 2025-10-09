@@ -1,13 +1,21 @@
 const htmlToPdfBuffer = async (html) => {
   // Check if we should use external PDF service (Browserless.io)
   const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
-  const USE_BROWSERLESS = process.env.VERCEL && BROWSERLESS_API_KEY;
   
-  if (USE_BROWSERLESS) {
-    // Use Browserless.io for Vercel deployment
+  // Detect Vercel environment (Vercel sets VERCEL_ENV or we can check for other Vercel-specific vars)
+  const isVercel = process.env.VERCEL_ENV || process.env.VERCEL_URL || process.env.VERCEL;
+  
+  // Use Browserless if we have the API key (required for Vercel)
+  if (BROWSERLESS_API_KEY) {
+    // Use Browserless.io for production/Vercel deployment
+    console.log('Using Browserless.io for PDF generation');
     return await generatePdfWithBrowserless(html, BROWSERLESS_API_KEY);
+  } else if (isVercel) {
+    // Running on Vercel but no Browserless API key
+    throw new Error('PDF generation requires BROWSERLESS_API_KEY environment variable on Vercel. Get your API key at https://browserless.io');
   } else {
     // Use local Puppeteer for development
+    console.log('Using local Puppeteer for PDF generation');
     return await generatePdfLocally(html);
   }
 };
