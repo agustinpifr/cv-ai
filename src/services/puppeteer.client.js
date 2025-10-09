@@ -1,29 +1,20 @@
-const chromium = require('@sparticuz/chromium');
-const puppeteer = require('puppeteer-core');
+const playwright = require('playwright-aws-lambda');
 
 const htmlToPdfBuffer = async (html) => {
   let browser = null;
   
   try {
-    // Browser launch configuration optimized for serverless with Sparticuz Chromium
-    const launchOptions = {
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
-      ignoreHTTPSErrors: true,
-    };
-
-    browser = await puppeteer.launch(launchOptions);
+    // Launch browser using playwright-aws-lambda which handles serverless compatibility
+    browser = await playwright.launchChromium();
     const page = await browser.newPage();
     
     // Set content with proper options
     await page.setContent(html, {
-      waitUntil: ['networkidle0', 'domcontentloaded']
+      waitUntil: 'networkidle'
     });
     
     // Add CSS for print media
-    await page.emulateMediaType('print');
+    await page.emulateMedia({ media: 'print' });
     
     // Generate PDF with A4 format
     const pdfBuffer = await page.pdf({
