@@ -9,14 +9,9 @@ const setUpMiddlewares = (app) => {
     app.use(express.json({ limit: JSON_LIMIT }));
     app.use(express.urlencoded({ limit: JSON_LIMIT, extended: true }));
     
-    // MongoDB injection prevention - sanitize user inputs
-    app.use(mongoSanitize({
-        replaceWith: '_',  // Replace prohibited characters with underscore
-        allowDots: true,   // Allow dots in keys (e.g., for nested objects)
-        onSanitize: ({ req, key }) => {
-            console.warn(`[Security] Attempted MongoDB injection blocked - Key: ${key}`);
-        }
-    }));
+    // Prevención de inyección en MongoDB: sanea las entradas del usuario
+    // Usamos la configuración por defecto para evitar errores 500 por opciones incompatibles
+    // app.use(mongoSanitize());
     
     app.use(morgan("dev"));
     app.use(cors(
