@@ -22,41 +22,110 @@ const htmlToPdfBuffer = async (html) => {
 
 // Browserless.io implementation for production
 const generatePdfWithBrowserless = async (html, apiKey) => {
-  try {
-    const response = await fetch(`https://chrome.browserless.io/pdf?token=${apiKey}`, {
-      method: 'POST',
+  // Try multiple Browserless API endpoints and authentication methods
+  const apiConfigs = [
+    {
+      name: 'Browserless v2 (Bearer Auth)',
+      url: 'https://production-sfo.browserless.io/pdf',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        html: html,
-        options: {
-          format: 'A4',
-          printBackground: true,
-          margin: {
-            top: '20mm',
-            right: '20mm',
-            bottom: '20mm',
-            left: '20mm'
-          },
-          preferCSSPageSize: false,
-          displayHeaderFooter: false
-        },
-        emulateMedia: 'print'
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Browserless API error: ${response.status} ${response.statusText}`);
+        'Authorization': `Bearer ${apiKey}`,
+        'Cache-Control': 'no-cache'
+      }
+    },
+    {
+      name: 'Browserless v1 (Token in URL)',
+      url: `https://chrome.browserless.io/pdf?token=${apiKey}`,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache'
+      }
+    },
+    {
+      name: 'Browserless v1 (Header Auth)',
+      url: 'https://chrome.browserless.io/pdf',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': apiKey,
+        'Cache-Control': 'no-cache'
+      }
     }
+  ];
 
-    const buffer = await response.arrayBuffer();
-    return Buffer.from(buffer);
-    
-  } catch (error) {
-    console.error('Error generating PDF with Browserless:', error);
-    throw new Error(`Failed to generate PDF: ${error.message}`);
+  const requestBody = JSON.stringify({
+    html: html,
+    options: {
+      format: 'A4',
+      printBackground: true,
+      margin: {
+        top: '20mm',
+        right: '20mm',
+        bottom: '20mm',
+        left: '20mm'
+      },
+      preferCSSPageSize: false,
+      displayHeaderFooter: false
+    },
+    // Try both property names for media emulation
+    emulateMediaType: 'print',
+    emulateMedia: 'print'
+  });
+
+  let lastError = null;
+
+  // Try each API configuration
+  for (const config of apiConfigs) {
+    try {
+      console.log(`Attempting Browserless connection: ${config.name}...`);
+      
+      const response = await fetch(config.url, {
+        method: 'POST',
+        headers: config.headers,
+        body: requestBody
+      });
+
+      console.log(`${config.name} - Response Status: ${response.status}`);
+      
+      if (response.ok) {
+        // Success! Generate and return the PDF
+        const buffer = await response.arrayBuffer();
+        console.log(`PDF generated successfully using ${config.name}, size: ${buffer.byteLength} bytes`);
+        return Buffer.from(buffer);
+      }
+      
+      // Log the error but continue trying other endpoints
+      const errorText = await response.text().catch(() => response.statusText);
+      console.error(`${config.name} failed:`, response.status, errorText);
+      lastError = { config: config.name, status: response.status, error: errorText };
+      
+    } catch (error) {
+      console.error(`${config.name} connection error:`, error.message);
+      lastError = { config: config.name, error: error.message };
+    }
   }
+
+  // All attempts failed, provide detailed error message
+  console.error('All Browserless API attempts failed. Last error:', lastError);
+  
+  if (lastError?.status === 403 || lastError?.status === 401) {
+    throw new Error(
+      `Browserless API authentication failed. Please verify:\n` +
+      `1. Your API key is correct and active\n` +
+      `2. Your account is not suspended\n` +
+      `3. You haven't exceeded your plan limits\n` +
+      `Check your dashboard at https://www.browserless.io/dashboard`
+    );
+  }
+  
+  if (lastError?.status === 429) {
+    throw new Error('Browserless API rate limit exceeded. Please check your usage at https://www.browserless.io/dashboard');
+  }
+  
+  throw new Error(
+    `Failed to generate PDF with Browserless. ` +
+    `Last attempt (${lastError?.config}) failed with: ${lastError?.error || lastError?.status || 'Unknown error'}. ` +
+    `Please check your API key and account status at https://www.browserless.io/dashboard`
+  );
 };
 
 // Local Puppeteer implementation for development
