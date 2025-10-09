@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "postinstall": "node -e \"if (!process.env.VERCEL) { require('child_process').execSync('puppeteer browsers install chrome', {stdio: 'inherit'}) }\""
   },
   "keywords": [],
   "author": "",
@@ -14,6 +16,7 @@
     "@sentry/node": "^10.17.0",
     "@upstash/redis": "^1.35.5",
     "bcrypt": "^6.0.0",
+    "chrome-aws-lambda": "^10.1.0",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
@@ -24,7 +27,8 @@
     "mongoose": "^8.18.2",
     "morgan": "^1.10.1",
     "openai": "^6.0.0",
-    "puppeteer-html-pdf": "^4.0.8",
+    "puppeteer": "^19.7.2",
+    "puppeteer-core": "^19.7.2",
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
