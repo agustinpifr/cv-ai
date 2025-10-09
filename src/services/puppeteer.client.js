@@ -3,7 +3,7 @@ let puppeteer;
 
 // Detect if running in Vercel/serverless environment
 if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  // Use Sparticuz Chromium for serverless environments
+  // Sparticuz Chromium for serverless environments
   chromium = require('@sparticuz/chromium');
   // Force headless and disable graphics for serverless compatibility
   chromium.setHeadlessMode = true;
