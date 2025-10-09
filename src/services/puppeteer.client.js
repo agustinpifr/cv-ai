@@ -5,9 +5,12 @@ let puppeteer;
 if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
   // Sparticuz Chromium for serverless environments
   chromium = require('@sparticuz/chromium');
-  // Force headless and disable graphics for serverless compatibility
+  // Set chromium options for serverless
   chromium.setHeadlessMode = true;
   chromium.setGraphicsMode = false;
+  // Additional font configuration for serverless
+  process.env.FONTCONFIG_PATH = '/tmp';
+  process.env.FONTCONFIG_FILE = '/tmp/fonts.conf';
   puppeteer = require('puppeteer-core');
 } else {
   // Use regular puppeteer for local development
@@ -21,10 +24,18 @@ const htmlToPdfBuffer = async (html) => {
     // Different browser launch configurations for different environments
     const launchOptions = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
       ? {
-          args: chromium.args,
+          args: [
+            ...chromium.args,
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
+          ],
           defaultViewport: chromium.defaultViewport,
           executablePath: await chromium.executablePath(),
-          headless: true,
+          headless: 'new',
           ignoreHTTPSErrors: true,
         }
       : {
