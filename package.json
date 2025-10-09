@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "postinstall": "node -e \"if (!process.env.VERCEL) { require('child_process').execSync('puppeteer browsers install chrome', {stdio: 'inherit'}) }\""
+    "postinstall": "PUPPETEER_CACHE_DIR=./node_modules/.cache/puppeteer puppeteer browsers install chrome"
   },
   "keywords": [],
   "author": "",

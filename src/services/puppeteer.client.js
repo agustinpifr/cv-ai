@@ -18,6 +18,7 @@ const htmlToPdfBuffer = async (html) => {
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor'
       ],
+      executablePath: puppeteer.executablePath(),
       headless: 'new',
       ignoreHTTPSErrors: true,
     };
