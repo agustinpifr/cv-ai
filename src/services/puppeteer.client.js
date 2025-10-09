@@ -1,6 +1,6 @@
 const htmlToPdfBuffer = async (html) => {
   // Check if we should use external PDF service (Browserless.io)
-  const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY;
+  const BROWSERLESS_API_KEY = process.env.BROWSERLESS_API_KEY?.trim(); // Trim any whitespace
   
   // Detect Vercel environment (Vercel sets VERCEL_ENV or we can check for other Vercel-specific vars)
   const isVercel = process.env.VERCEL_ENV || process.env.VERCEL_URL || process.env.VERCEL;
@@ -9,6 +9,10 @@ const htmlToPdfBuffer = async (html) => {
   if (BROWSERLESS_API_KEY) {
     // Use Browserless.io for production/Vercel deployment
     console.log('Using Browserless.io for PDF generation');
+    console.log('API Key present:', !!BROWSERLESS_API_KEY);
+    console.log('API Key length:', BROWSERLESS_API_KEY.length);
+    console.log('API Key first 4 chars:', BROWSERLESS_API_KEY.substring(0, 4) + '...');
+    console.log('Environment:', isVercel ? 'Vercel' : 'Local with Browserless');
     return await generatePdfWithBrowserless(html, BROWSERLESS_API_KEY);
   } else if (isVercel) {
     // Running on Vercel but no Browserless API key
@@ -22,39 +26,63 @@ const htmlToPdfBuffer = async (html) => {
 
 // Browserless.io implementation for production
 const generatePdfWithBrowserless = async (html, apiKey) => {
-  // Try multiple Browserless API endpoints and authentication methods
+  // First, let's test if the API key works at all
+  console.log('Testing Browserless API key connectivity...');
+  try {
+    const testResponse = await fetch(`https://production-sfo.browserless.io/pdf?token=${apiKey}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        html: '<h1>Test</h1>'
+      })
+    });
+    console.log('Browserless test response:', testResponse.status, testResponse.statusText);
+    if (testResponse.status === 403) {
+      const errorBody = await testResponse.text();
+      console.error('Browserless API key test failed with 403. Response:', errorBody);
+      console.error('Please verify your API key format. It should look like: bless_xxxxx or similar');
+    }
+  } catch (testError) {
+    console.error('Browserless connectivity test failed:', testError.message);
+  }
+
+  // Updated API configs - prioritize the new production endpoint
   const apiConfigs = [
     {
-      name: 'Browserless v2 (Bearer Auth)',
+      name: 'Browserless Production (Token in URL)',
+      url: `https://production-sfo.browserless.io/pdf?token=${apiKey}`,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Node.js/Vercel'
+      }
+    },
+    {
+      name: 'Browserless Production (Bearer)',
       url: 'https://production-sfo.browserless.io/pdf',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
-        'Cache-Control': 'no-cache'
+        'User-Agent': 'Node.js/Vercel'
       }
     },
     {
-      name: 'Browserless v1 (Token in URL)',
-      url: `https://chrome.browserless.io/pdf?token=${apiKey}`,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
-    },
-    {
-      name: 'Browserless v1 (Header Auth)',
-      url: 'https://chrome.browserless.io/pdf',
+      name: 'Browserless Alternative Auth',
+      url: 'https://production-sfo.browserless.io/pdf',
       headers: {
         'Content-Type': 'application/json',
         'X-API-KEY': apiKey,
-        'Cache-Control': 'no-cache'
+        'User-Agent': 'Node.js/Vercel'
       }
     }
   ];
 
-  const requestBody = JSON.stringify({
-    html: html,
-    options: {
+  // Try two different request body formats
+  const requestBodies = [
+    // Format 1: Simple format with options at root level
+    JSON.stringify({
+      html: html,
       format: 'A4',
       printBackground: true,
       margin: {
@@ -62,45 +90,62 @@ const generatePdfWithBrowserless = async (html, apiKey) => {
         right: '20mm',
         bottom: '20mm',
         left: '20mm'
+      }
+    }),
+    // Format 2: Nested options format
+    JSON.stringify({
+      html: html,
+      options: {
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '20mm',
+          right: '20mm',
+          bottom: '20mm',
+          left: '20mm'
+        },
+        preferCSSPageSize: false,
+        displayHeaderFooter: false
       },
-      preferCSSPageSize: false,
-      displayHeaderFooter: false
-    },
-    // Try both property names for media emulation
-    emulateMediaType: 'print',
-    emulateMedia: 'print'
-  });
+      emulateMediaType: 'print'
+    })
+  ];
 
   let lastError = null;
 
-  // Try each API configuration
+  // Try each API configuration with each request body format
   for (const config of apiConfigs) {
-    try {
-      console.log(`Attempting Browserless connection: ${config.name}...`);
+    for (let i = 0; i < requestBodies.length; i++) {
+      const requestBody = requestBodies[i];
+      const formatName = i === 0 ? 'simple' : 'nested';
       
-      const response = await fetch(config.url, {
-        method: 'POST',
-        headers: config.headers,
-        body: requestBody
-      });
+      try {
+        console.log(`Attempting Browserless connection: ${config.name} with ${formatName} format...`);
+        
+        const response = await fetch(config.url, {
+          method: 'POST',
+          headers: config.headers,
+          body: requestBody
+        });
 
-      console.log(`${config.name} - Response Status: ${response.status}`);
-      
-      if (response.ok) {
-        // Success! Generate and return the PDF
-        const buffer = await response.arrayBuffer();
-        console.log(`PDF generated successfully using ${config.name}, size: ${buffer.byteLength} bytes`);
-        return Buffer.from(buffer);
+        console.log(`${config.name} (${formatName}) - Response Status: ${response.status}`);
+        
+        if (response.ok) {
+          // Success! Generate and return the PDF
+          const buffer = await response.arrayBuffer();
+          console.log(`PDF generated successfully using ${config.name} with ${formatName} format, size: ${buffer.byteLength} bytes`);
+          return Buffer.from(buffer);
+        }
+        
+        // Log the error but continue trying other endpoints
+        const errorText = await response.text().catch(() => response.statusText);
+        console.error(`${config.name} (${formatName}) failed:`, response.status, errorText);
+        lastError = { config: `${config.name} (${formatName})`, status: response.status, error: errorText };
+        
+      } catch (error) {
+        console.error(`${config.name} (${formatName}) connection error:`, error.message);
+        lastError = { config: `${config.name} (${formatName})`, error: error.message };
       }
-      
-      // Log the error but continue trying other endpoints
-      const errorText = await response.text().catch(() => response.statusText);
-      console.error(`${config.name} failed:`, response.status, errorText);
-      lastError = { config: config.name, status: response.status, error: errorText };
-      
-    } catch (error) {
-      console.error(`${config.name} connection error:`, error.message);
-      lastError = { config: config.name, error: error.message };
     }
   }
 

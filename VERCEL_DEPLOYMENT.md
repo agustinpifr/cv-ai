@@ -64,11 +64,42 @@ vercel --prod
 ### Error: "PDF generation requires BROWSERLESS_API_KEY environment variable on Vercel"
 **Solution**: Add the `BROWSERLESS_API_KEY` to your Vercel environment variables.
 
-### Error: "Browserless API error: 401 Unauthorized"
-**Solution**: Your Browserless API key is invalid. Check your key in the Browserless dashboard.
+### Error: "Browserless API error: 403 Forbidden" or "401 Unauthorized"
+**Solutions**:
+1. **Check API Key Format**: 
+   - Make sure you're copying the ENTIRE API key from Browserless dashboard
+   - The key should look like: `bless_xxxxxxxxxxxxxxxxxxxxx` or similar format
+   - Don't include any quotes or extra spaces
+   
+2. **Verify in Vercel Dashboard**:
+   - Go to your Vercel project → Settings → Environment Variables
+   - Make sure `BROWSERLESS_API_KEY` is set correctly
+   - Re-deploy after changing environment variables: `vercel --prod`
+   
+3. **Check Browserless Account**:
+   - Log into [browserless.io/dashboard](https://browserless.io/dashboard)
+   - Verify your account is active and not suspended
+   - Check if API key is still valid (they may expire)
+   - Try regenerating the API key if needed
+   
+4. **Test Your API Key Locally**:
+   ```bash
+   # Test your API key with curl
+   curl -X POST \
+     "https://chrome.browserless.io/pdf?token=YOUR_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d '{"html":"<h1>Test</h1>"}' \
+     --output test.pdf
+   ```
 
 ### Error: "Browserless API error: 429 Too Many Requests"
 **Solution**: You've exceeded your Browserless plan limits. Check your usage at browserless.io.
+
+### Debug Mode
+The application will now try multiple Browserless API endpoints and formats automatically. Check your Vercel Function logs to see which attempts are being made:
+1. Go to Vercel Dashboard → Functions tab
+2. Click on your function logs
+3. Look for messages like "Attempting Browserless connection..."
 
 ## Local Development
 
