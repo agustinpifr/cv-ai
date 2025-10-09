@@ -1,56 +1,26 @@
-let chromium;
-let puppeteer;
-
-// Detect if running in Vercel/serverless environment
-if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
-  // Sparticuz Chromium for serverless environments
-  chromium = require('@sparticuz/chromium');
-  // Set chromium options for serverless
-  chromium.setHeadlessMode = true;
-  chromium.setGraphicsMode = false;
-  // Additional font configuration for serverless
-  process.env.FONTCONFIG_PATH = '/tmp';
-  process.env.FONTCONFIG_FILE = '/tmp/fonts.conf';
-  puppeteer = require('puppeteer-core');
-} else {
-  // Use regular puppeteer for local development
-  puppeteer = require('puppeteer');
-}
+const puppeteer = require('puppeteer');
 
 const htmlToPdfBuffer = async (html) => {
   let browser = null;
   
   try {
-    // Different browser launch configurations for different environments
-    const launchOptions = process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME
-      ? {
-          args: [
-            ...chromium.args,
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--no-sandbox',
-            '--disable-setuid-sandbox'
-          ],
-          defaultViewport: chromium.defaultViewport,
-          executablePath: await chromium.executablePath(),
-          headless: 'new',
-          ignoreHTTPSErrors: true,
-        }
-      : {
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-          ],
-          headless: true,
-        };
+    // Browser launch configuration optimized for serverless
+    const launchOptions = {
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
+      ],
+      headless: 'new',
+      ignoreHTTPSErrors: true,
+    };
 
     browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
