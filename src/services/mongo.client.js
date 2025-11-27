@@ -5,14 +5,12 @@ const connect = async () => {
     MONGODB_CONNECTION_STRING,
     MONGODB_SERVER_SELECTION_TIMEOUT
   } = process.env;
-  try {
-    await mongoose.connect(MONGODB_CONNECTION_STRING, {
-      serverSelectionTimeoutMS: Number(MONGODB_SERVER_SELECTION_TIMEOUT),
-    });
-    console.log("Connected to MongoDB");
-  } catch (error) {
-    console.log(error);
-  }
+
+  await mongoose.connect(MONGODB_CONNECTION_STRING, {
+    serverSelectionTimeoutMS: Number(MONGODB_SERVER_SELECTION_TIMEOUT) || 10000,
+    bufferCommands: false, // Disable buffering to fail fast if not connected
+  });
+  console.log("Connected to MongoDB");
 };
 
 module.exports = connect;
