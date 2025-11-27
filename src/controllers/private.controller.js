@@ -7,46 +7,66 @@ const { saveCV, findCVsByUser } = require("../repositories/cv.repository");
 const { saveImage, getCachedImage, deleteImageByUserId } = require("../repositories/image.repository");
 
 const postQuestion = async (req, res) => {
-    const { content } = req.body;
-    const question = await saveQuestion({ content });
-    res.json({
-        message: SUCCESS_MESSAGE,
-        question
-    });
+    try {
+        const { content } = req.body;
+        const question = await saveQuestion({ content });
+        res.json({
+            message: SUCCESS_MESSAGE,
+            question
+        });
+    } catch (error) {
+        console.error('postQuestion error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
 }
 
 const postAnswer = async (req, res) => {
-    const { questionId, content } = req.body;
-    const userId = req.userId;
-    const question = await findQuestionById(questionId);
-    if(!question){
-        res.status(404).json({
-            message: NOT_FOUND_MESSAGE
+    try {
+        const { questionId, content } = req.body;
+        const userId = req.userId;
+        const question = await findQuestionById(questionId);
+        if(!question){
+            res.status(404).json({
+                message: NOT_FOUND_MESSAGE
+            });
+            return;
+        }
+        const answer = await saveAnswer(userId, questionId, question.content, content);
+        res.json({
+            message: SUCCESS_MESSAGE,
+            answer
         });
-        return;
+    } catch (error) {
+        console.error('postAnswer error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
     }
-    const answer = await saveAnswer(userId, questionId, question.content, content);
-    res.json({
-        message: SUCCESS_MESSAGE,
-        answer
-    });
 }
 
 const getAnswers = async (req, res) => {
-    const userId = req.userId;
-    const answers = await getAllAnswers(userId);
-    res.json({
-        message: SUCCESS_MESSAGE,
-        answers
-    });
+    try {
+        const userId = req.userId;
+        const answers = await getAllAnswers(userId);
+        res.json({
+            message: SUCCESS_MESSAGE,
+            answers
+        });
+    } catch (error) {
+        console.error('getAnswers error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
 }
 
 const getQuestions = async (req, res) => {
-    const questions = await findAllQuestions();
-    res.json({
-        message: SUCCESS_MESSAGE,
-        questions
-    });
+    try {
+        const questions = await findAllQuestions();
+        res.json({
+            message: SUCCESS_MESSAGE,
+            questions
+        });
+    } catch (error) {
+        console.error('getQuestions error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
 }
 
 const getPDF = async (req, res) => {
@@ -128,20 +148,30 @@ const uploadImage = async (req, res) => {
 }
 
 const getImage = async (req, res) => {
-    const userId = req.userId;
-    const image = await getCachedImage(userId);
-    res.json({
-        message: SUCCESS_MESSAGE,
-        image
-    });
+    try {
+        const userId = req.userId;
+        const image = await getCachedImage(userId);
+        res.json({
+            message: SUCCESS_MESSAGE,
+            image
+        });
+    } catch (error) {
+        console.error('getImage error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
 }   
 
 const deleteImage = async (req, res) => {
-    const userId = req.userId;
-    await deleteImageByUserId(userId);
-    res.json({
-        message: SUCCESS_MESSAGE
-    });
+    try {
+        const userId = req.userId;
+        await deleteImageByUserId(userId);
+        res.json({
+            message: SUCCESS_MESSAGE
+        });
+    } catch (error) {
+        console.error('deleteImage error:', error);
+        res.status(500).json({ message: error.message || 'Internal server error' });
+    }
 }
 
 module.exports = {
