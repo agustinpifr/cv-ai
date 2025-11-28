@@ -17,7 +17,7 @@ privateRouter.get("/questions", authMiddleware, getQuestions);
 
 privateRouter.get("/answers", authMiddleware, getAnswers);
 
-privateRouter.get("/pdf", authMiddleware, payloadMiddleware(pdfRequestSchema), getPDF);
+privateRouter.post("/pdf", authMiddleware, payloadMiddleware(pdfRequestSchema), getPDF);
 
 privateRouter.get("/templates", authMiddleware, getTemplates);
 
