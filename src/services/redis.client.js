@@ -4,10 +4,15 @@ let redis;
 
 const connectToRedis = () => {
     if (!redis) {
-        redis = new Redis({
-            url: process.env.REDIS_URL,
-            token: process.env.REDIS_TOKEN
-        });
+        const url = process.env.REDIS_URL;
+        const token = process.env.REDIS_TOKEN;
+        
+        if (!url || !token) {
+            throw new Error(`Redis config missing: REDIS_URL=${url ? 'set' : 'MISSING'}, REDIS_TOKEN=${token ? 'set' : 'MISSING'}`);
+        }
+        
+        redis = new Redis({ url, token });
+        console.log('Redis client initialized');
     }
     return redis;
 }

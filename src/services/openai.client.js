@@ -43,7 +43,7 @@ const generateHTML = async (userId, { templateName = "harvard", photoUrl = null 
 		"\n\nRequirements:\n",
 		"- Preserve the template structure and styles.\n",
 		"- Integrate the answers into the appropriate sections.\n",
-		photoUrl ? "- Replace {{PHOTO_BLOCK}} with an img tag using the provided photo URL. Style it as a circular profile photo (84px size, border-radius: 50%, float: right in header).\n" : "- Remove {{PHOTO_BLOCK}} placeholder.\n",
+		photoUrl ? `- Replace {{PHOTO_BLOCK}} with: <img src="${photoUrl}" alt="Photo" class="avatar" />\n` : "- Remove {{PHOTO_BLOCK}} placeholder entirely.\n",
 		"- Remove dates or any content that is not related to the user's answers and that is not final to be printed.\n",
 		"- Remove any unresolved placeholders like {{VAR}}.\n",
 		"- Delete elements that would be empty after fill; remove entire empty sections.\n",

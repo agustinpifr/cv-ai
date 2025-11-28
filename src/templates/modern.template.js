@@ -24,7 +24,7 @@ const getModernTemplate = () => {
     .when,.loc{color:var(--muted)}
     .pill{display:inline-block;border:1px solid #2b3756;padding:6px 10px;border-radius:999px;margin:4px 6px 0 0}
     ul{margin:8px 0 0 16px}
-    .avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:1px solid #2b3756;display:none}
+    .avatar{width:72px;height:72px;border-radius:50%;object-fit:cover;border:1px solid #2b3756}
   </style>
   </head>
 <body>

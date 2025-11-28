@@ -57,7 +57,7 @@ const getHarvardTemplate = () => {
                         background: #F8F8F9; border:1px solid var(--line); padding:12px 14px; border-radius:10px; color:#2a2d31
                         }
                         .avatar{
-                        width:84px; height:84px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); float:right; margin-top:-4px; margin-left:16px; display:none
+                        width:84px; height:84px; border-radius:50%; object-fit:cover; border:2px solid var(--accent); float:right; margin-top:-4px; margin-left:16px
                         }
                         /* print */
                         @page{margin: 1.3cm}
