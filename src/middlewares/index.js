@@ -6,6 +6,11 @@ const mongoSanitize = require("express-mongo-sanitize");
 
 const setUpMiddlewares = (app) => {
     const JSON_LIMIT = process.env.JSON_LIMIT || "15mb";
+    
+    // Trust proxy - required when running behind Vercel, Heroku, AWS ELB, etc.
+    // This ensures req.ip returns the client's real IP, not the proxy's IP
+    app.set('trust proxy', 1);
+    
     app.use(express.json({ limit: JSON_LIMIT }));
     app.use(express.urlencoded({ limit: JSON_LIMIT, extended: true }));
     
