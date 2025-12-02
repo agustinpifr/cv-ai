@@ -87,7 +87,14 @@ const getPDF = async (req, res) => {
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
         res.send(pdfBuffer);
+        
+        // Save CV and delete image after PDF is sent (non-blocking)
         saveCV(userId, pdfBuffer, templateName).catch(() => {});
+        if (validPhotoUrl) {
+            deleteImageByUserId(userId).catch((err) => {
+                console.error('Error deleting image after PDF generation:', err);
+            });
+        }
     } catch (error) {
         if (!res.headersSent) {
             res.status(500).json({ message: error.message });
